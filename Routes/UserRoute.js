@@ -1,16 +1,22 @@
 import express from "express";
-import { signUpPasien, getAllPasien } from "../controllers/AccountControllers.js";
+import {
+  signUpPasien,
+  getAllPasien,
+  signInPasien,
+} from "../controllers/AccountControllers.js";
 
 const router = express.Router();
 
 router.get("/", (req, res) => {
-    res.json({
-        message: "Welcome to the User API",
-    });
-    }
-);
+  res.json({
+    message: "Welcome to the User API",
+  });
+});
 
-router.post("/register", signUpPasien); 
+router.post("/auth/signUpPasien", signUpPasien);
+
+router.post("/auth/signInPasien", signInPasien);
+
 router.get("/getAllPasien", getAllPasien);
 
 export default router;
