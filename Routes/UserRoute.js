@@ -1,8 +1,8 @@
 import express from "express";
 import {
-  signUpPasien,
+  signUp,
   getAllPasien,
-  signInPasien,
+  signIn,
 } from "../controllers/AccountControllers.js";
 
 const router = express.Router();
@@ -13,9 +13,9 @@ router.get("/test", (req, res) => {
   });
 });
 
-router.post("/auth/signUpPasien", signUpPasien);
+router.post("/auth/signUp", signUp);
 
-router.post("/auth/signInPasien", signInPasien);
+router.post("/auth/signIn", signIn);
 
 router.get("/getAllPasien", getAllPasien);
 
