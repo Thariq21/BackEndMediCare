@@ -1,9 +1,12 @@
 import { supabase } from "../db_config.js";
 import bcrypt from "bcrypt";
 import { hasEmailDomain } from "../hooks/hasEmailDomain.js";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET; // Ganti dengan env var di produksi
 
 export const signUp = async (req, res) => {
-  const { email, password, nama_lengkap, nik, jenis_kelamin } = req.body;
+  const { email, password, nama_pasien, nik, jenis_kelamin } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -14,9 +17,9 @@ export const signUp = async (req, res) => {
         {
           email,
           password: hashedPassword,
-          nama_lengkap,
+          nama_pasien,
           nik,
-          jenis_kelamin,
+          jenis_kelamin: jenis_kelamin === "Laki-laki" ? "L" : "P",
         },
       ])
       .select();
@@ -55,7 +58,7 @@ export const signIn = async (req, res) => {
       error = result.error;
     } else {
       const result = await supabase
-        .from("tenaga_kesehatan")
+        .from("tenaga_medis")
         .select("*")
         .eq("email", email)
         .single();
@@ -72,15 +75,22 @@ export const signIn = async (req, res) => {
       return res.status(400).json({ error: "Password salah" });
     }
 
-    // Remove Password from user object
     const { password: _, ...userWithoutPassword } = user;
+
+    // Buat token
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: hasEmailDomain(user.email, "gmail.com") ? "pasien" : "admin",
+      },
+      JWT_SECRET,
+      { expiresIn: "15m" } // Token expired dalam 30 min
+    );
 
     return res.status(200).json({
       message: "User signed in successfully",
-      user: {
-        ...userWithoutPassword,
-        role: hasEmailDomain(user.email, "gmail.com") ? "pasien" : "admin",
-      },
+      user: userWithoutPassword,
+      token, // Kirim token ke frontend
     });
   } catch (err) {
     console.error("Unexpected error:", err);
