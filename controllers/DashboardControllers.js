@@ -27,26 +27,29 @@ export const getDashboardData = async (req, res) => {
       .eq("nik", nikPasien)
       .single();
 
-    if (pasienError && pasienError.code !== 'PGRST116') { // PGRST116: single row not found
-        console.error("Error fetching pasien data:", pasienError);
-        // Jangan langsung return, mungkin data lain masih bisa diambil atau beri nilai default
+    if (pasienError && pasienError.code !== "PGRST116") {
+      // PGRST116: single row not found
+      console.error("Error fetching pasien data:", pasienError);
+      // Jangan langsung return, mungkin data lain masih bisa diambil atau beri nilai default
     }
-    if (!pasienData && pasienError && pasienError.code === 'PGRST116') {
-        return res.status(404).json({ error: "Pasien tidak ditemukan" });
+    if (!pasienData && pasienError && pasienError.code === "PGRST116") {
+      return res.status(404).json({ error: "Pasien tidak ditemukan" });
     }
-
 
     // 2. Ambil Data Terkini (Tekanan Darah, Suhu, Tgl Periksa Terakhir)
     // Ini biasanya dari rekam medis terakhir
     const { data: rekamMedisTerakhir, error: rmError } = await supabase
       .from("rekam_medis")
-      .select("tanggal_periksa, tekanan_darah, suhu_tubuh, keluhan, diagnosa, tindakan, catatan_dokter, tenaga_medis(nama_lengkap)") // Join dengan tenaga_medis
+      .select(
+        "no_rekam_medis, tanggal_periksa, tekanan_darah, suhu_tubuh, keluhan, diagnosa, tindakan, catatan_dokter, tenaga_medis(nama_lengkap)"
+      ) // Join dengan tenaga_medis
       .eq("nik", nikPasien)
       .order("tanggal_periksa", { ascending: false })
       .limit(1)
       .single(); // Ambil satu record terbaru
 
-    if (rmError && rmError.code !== 'PGRST116') { // Abaikan error jika tidak ada record, tapi log jika error lain
+    if (rmError && rmError.code !== "PGRST116") {
+      // Abaikan error jika tidak ada record, tapi log jika error lain
       console.error("Error fetching rekam medis terakhir:", rmError);
     }
 
@@ -65,10 +68,12 @@ export const getDashboardData = async (req, res) => {
     }
 
     // 4. Jadwal Pemeriksaan (Contoh: 2 jadwal mendatang)
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     const { data: jadwalPemeriksaan, error: jadwalError } = await supabase
       .from("jadwal_periksa")
-      .select("no_jadwal, tanggal, jam, status, tenaga_medis(nama_lengkap, spesialis)") // Join dengan tenaga_medis
+      .select(
+        "no_jadwal, tanggal, jam, status, tenaga_medis(nama_lengkap, spesialis)"
+      ) // Join dengan tenaga_medis
       .eq("nik", nikPasien)
       .gte("tanggal", today) // Ambil jadwal mulai hari ini dan ke depan
       .order("tanggal", { ascending: true })
@@ -82,24 +87,27 @@ export const getDashboardData = async (req, res) => {
     // 5. Resep Aktif (Contoh: resep dari rekam medis terakhir atau resep yang belum kedaluwarsa)
     // Ini memerlukan logika lebih, misal mengambil no_resep dari rekam medis terakhir
     // lalu ambil obat_resep berdasarkan no_resep tersebut.
+
     let resepAktif = [];
-    if (rekamMedisTerakhir && rekamMedisTerakhir.no_rekam_medis) { // Perlu pastikan field no_rekam_medis ada di select atas
-        const { data: resepData, error: resepError } = await supabase
-            .from("resep_dokter")
-            .select("no_resep, tanggal_resep, obat_resep(nama_obat, dosis, frekuensi, lama_penggunaan)")
-            .eq("no_rekam_medis", rekamMedisTerakhir.no_rekam_medis) // Ini asumsi, Anda perlu no_rekam_medis dari query rekamMedisTerakhir
-            .order("tanggal_resep", { ascending: false })
-            .limit(1)
-            .single();
+    if (rekamMedisTerakhir && rekamMedisTerakhir.no_rekam_medis) {
+      // Perlu pastikan field no_rekam_medis ada di select atas
+      const { data: resepData, error: resepError } = await supabase
+        .from("resep_dokter")
+        .select(
+          "no_resep, tanggal_resep, obat_resep(nama_obat, dosis, frekuensi, lama_penggunaan)"
+        )
+        .eq("no_rekam_medis", rekamMedisTerakhir.no_rekam_medis) // Ini asumsi, Anda perlu no_rekam_medis dari query rekamMedisTerakhir
+        .order("tanggal_resep", { ascending: false })
+        .limit(1)
+        .single(); // Ambil satu resep terbaru
 
-        if (resepError && resepError.code !== 'PGRST116') {
-            console.error("Error fetching resep dokter:", resepError);
-        }
-        if (resepData) {
-            resepAktif = resepData.obat_resep || [];
-        }
+      if (resepError && resepError.code !== "PGRST116") {
+        console.error("Error fetching resep dokter:", resepError);
+      }
+      if (resepData) {
+        resepAktif = resepData.obat_resep || [];
+      }
     }
-
 
     res.status(200).json({
       namaPasien: pasienData ? pasienData.nama_pasien : "Pasien",
@@ -112,11 +120,13 @@ export const getDashboardData = async (req, res) => {
         : null,
       catatanMedisTerbaru: rekamMedisTerakhir
         ? {
-            dokter: rekamMedisTerakhir.tenaga_medis ? rekamMedisTerakhir.tenaga_medis.nama_lengkap : "N/A",
+            dokter: rekamMedisTerakhir.tenaga_medis
+              ? rekamMedisTerakhir.tenaga_medis.nama_lengkap
+              : "N/A",
             rekomendasi: rekamMedisTerakhir.catatan_dokter, // atau field lain yang relevan
             keluhan: rekamMedisTerakhir.keluhan,
             diagnosa: rekamMedisTerakhir.diagnosa,
-            tindakan: rekamMedisTerakhir.tindakan
+            tindakan: rekamMedisTerakhir.tindakan,
           }
         : null,
       riwayatPenyakitUtama: riwayatPenyakit || [],
