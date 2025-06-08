@@ -1,0 +1,39 @@
+# .github/workflows/deploy-to-azure.yml
+
+name: Deploy Backend to Azure App Service (via Local Git)
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '20.x'
+  # URL Git remote dari Azure App Service Anda
+  AZURE_GIT_URL: https://medicare-api.scm.azurewebsites.net/medicare-api.git
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+
+    - name: 'Set up Node.js'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 'npm install'
+      run: npm install
+
+    - name: 'Deploy to Azure using Git'
+      run: |
+        # Mengatur remote URL dengan username dan password dari secrets
+        # 'https://<user>:<password>@<url>'
+        git remote add azure https://${{ secrets.AZURE_APP_USERNAME }}:${{ secrets.AZURE_APP_PASSWORD }}@medicare-api.scm.azurewebsites.net/medicare-api.git
+        # Mendorong secara paksa (force push) ke branch master di remote Azure
+        git push azure main:master -f
