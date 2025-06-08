@@ -84,7 +84,7 @@ export const signIn = async (req, res) => {
         role: hasEmailDomain(user.email, "gmail.com") ? "pasien" : "admin",
       },
       JWT_SECRET,
-      { expiresIn: "15m" } // Token expired dalam 30 min
+      { expiresIn: "15m" } // Token expired dalam 15 min
     );
 
     return res.status(200).json({
