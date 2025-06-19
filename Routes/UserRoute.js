@@ -7,6 +7,7 @@ import {
 import { getDashboardData } from "../controllers/DashboardControllers.js";
 import { getRiwayatMedisData } from "../controllers/RiwayatMedisControllers.js";
 import { getResepObatData } from "../controllers/ResepObatControllers.js";
+import { getJadwalPeriksaData } from "../controllers/JadwalPeriksaControllers.js";
 
 const router = express.Router();
 
@@ -27,5 +28,7 @@ router.get("/dashboard/:nikPasien", getDashboardData);
 router.get("/riwayatMedis/:nikPasien", getRiwayatMedisData);
 
 router.get("/resepObat/:nikPasien", getResepObatData);
+
+router.get("/jadwalPeriksa/:nikPasien", getJadwalPeriksaData)
 
 export default router;
