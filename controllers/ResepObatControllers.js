@@ -46,24 +46,22 @@ export const getResepObatData = async (req, res) => {
     if (resepList.length === 0) {
       return res.status(404).json({ message: "Resep obat tidak ditemukan" });
     }
-    
+
     // (Opsional tapi direkomendasikan) Transformasi data agar lebih mudah digunakan di frontend
     const transformedData = resepList.map((resep) => {
-        const { rekam_medis, ...resepHeader } = resep;
-        const tenagaMedis = rekam_medis?.tenaga_medis;
-        const faskes = tenagaMedis?.fasilitas_kesehatan;
+      const { rekam_medis, ...resepHeader } = resep;
+      const tenagaMedis = rekam_medis?.tenaga_medis;
+      const faskes = tenagaMedis?.fasilitas_kesehatan;
 
-        return {
-            ...resepHeader,
-            nama_dokter: tenagaMedis?.nama_lengkap || "N/A",
-            spesialis: tenagaMedis?.spesialis || "N/A",
-            nama_fasilitas: faskes?.nama_fasilitas || "N/A",
-        };
+      return {
+        ...resepHeader,
+        nama_dokter: tenagaMedis?.nama_lengkap || "N/A",
+        spesialis: tenagaMedis?.spesialis || "N/A",
+        nama_fasilitas: faskes?.nama_fasilitas || "N/A",
+      };
     });
 
-
     return res.status(200).json(transformedData);
-
   } catch (err) {
     console.error("Unexpected error:", err);
     return res.status(500).json({ error: "Terjadi kesalahan server" });

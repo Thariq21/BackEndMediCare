@@ -29,6 +29,6 @@ router.get("/riwayatMedis/:nikPasien", getRiwayatMedisData);
 
 router.get("/resepObat/:nikPasien", getResepObatData);
 
-router.get("/jadwalPeriksa/:nikPasien", getJadwalPeriksaData)
+router.get("/jadwalMedis/:nikPasien", getJadwalPeriksaData);
 
 export default router;
